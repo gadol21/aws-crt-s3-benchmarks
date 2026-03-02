@@ -7,6 +7,8 @@ namespace S3BenchrunnerDotnet;
 
 public class SdkDotnetBenchmarkRunner : BenchmarkRunner
 {
+    private const int MaxConcurrency = 1000;
+    private readonly SemaphoreSlim _semaphore = new(MaxConcurrency);
     private readonly IAmazonS3 _s3Client;
     private readonly TransferUtility? _transferUtility;
     private readonly bool _useTransferUtility;
@@ -74,47 +76,63 @@ public class SdkDotnetBenchmarkRunner : BenchmarkRunner
 
     private async Task UploadWithClientAsync(TaskConfig taskConfig)
     {
-        if (Config.FilesOnDisk)
+        await _semaphore.WaitAsync();
+        try
         {
-            var request = new PutObjectRequest
+            if (Config.FilesOnDisk)
             {
-                BucketName = Bucket,
-                Key = taskConfig.Key,
-                FilePath = taskConfig.Key,
-            };
-            await _s3Client.PutObjectAsync(request);
+                var request = new PutObjectRequest
+                {
+                    BucketName = Bucket,
+                    Key = taskConfig.Key,
+                    FilePath = taskConfig.Key,
+                };
+                await _s3Client.PutObjectAsync(request);
+            }
+            else
+            {
+                using var stream = new RandomDataStream(RandomDataForUpload!, taskConfig.Size);
+                var request = new PutObjectRequest
+                {
+                    BucketName = Bucket,
+                    Key = taskConfig.Key,
+                    InputStream = stream,
+                };
+                await _s3Client.PutObjectAsync(request);
+            }
         }
-        else
+        finally
         {
-            using var stream = new RandomDataStream(RandomDataForUpload!, taskConfig.Size);
-            var request = new PutObjectRequest
-            {
-                BucketName = Bucket,
-                Key = taskConfig.Key,
-                InputStream = stream,
-            };
-            await _s3Client.PutObjectAsync(request);
+            _semaphore.Release();
         }
     }
 
     private async Task DownloadWithClientAsync(TaskConfig taskConfig)
     {
-        var request = new GetObjectRequest
+        await _semaphore.WaitAsync();
+        try
         {
-            BucketName = Bucket,
-            Key = taskConfig.Key,
-        };
+            var request = new GetObjectRequest
+            {
+                BucketName = Bucket,
+                Key = taskConfig.Key,
+            };
 
-        using var response = await _s3Client.GetObjectAsync(request);
-        if (Config.FilesOnDisk)
-        {
-            await response.WriteResponseStreamToFileAsync(taskConfig.Key, false, CancellationToken.None);
+            using var response = await _s3Client.GetObjectAsync(request);
+            if (Config.FilesOnDisk)
+            {
+                await response.WriteResponseStreamToFileAsync(taskConfig.Key, false, CancellationToken.None);
+            }
+            else
+            {
+                // Read and discard the data
+                var buffer = new byte[8 * 1024 * 1024];
+                while (await response.ResponseStream.ReadAsync(buffer) > 0) { }
+            }
         }
-        else
+        finally
         {
-            // Read and discard the data
-            var buffer = new byte[8 * 1024 * 1024];
-            while (await response.ResponseStream.ReadAsync(buffer) > 0) { }
+            _semaphore.Release();
         }
     }
 
