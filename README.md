@@ -86,6 +86,8 @@ Here are the IDs used for various S3 Clients, and the runner you must build to b
 | `sdk-cpp-client-classic` | [aws-sdk-cpp](https://github.com/aws/aws-sdk-cpp) with (non-CRT) S3Client | `cpp` | [runners/s3-benchrunner-cpp](runners/s3-benchrunner-cpp/) |
 | `sdk-cpp-tm-classic` | [aws-sdk-cpp](https://github.com/aws/aws-sdk-cpp) with (non-CRT) TransferManager | `cpp` | [runners/s3-benchrunner-cpp](runners/s3-benchrunner-cpp/) |
 | `sdk-rust-tm` | [aws-s3-transfer-manager-rs](https://github.com/awslabs/aws-s3-transfer-manager-rs/) | `rust` | [runners/s3-benchrunner-rust](runners/s3-benchrunner-rust/) |
+| `sdk-dotnet-client` | [AWSSDK.S3](https://github.com/aws/aws-sdk-net/) with AmazonS3Client | `dotnet` | [runners/s3-benchrunner-dotnet](runners/s3-benchrunner-dotnet/) |
+| `sdk-dotnet-tm` | [AWSSDK.S3](https://github.com/aws/aws-sdk-net/) with TransferUtility | `dotnet` | [runners/s3-benchrunner-dotnet](runners/s3-benchrunner-dotnet/) |
 
 ### Build a Runner
 
@@ -93,7 +95,7 @@ You must build a "runner" for the S3 client you'll be benchmarking. For example,
 
 Run `scripts/build-runner.py`:
 ```sh
-usage: build-runner.py [-h] --lang {c,python,java} --build-dir BUILD_DIR [--branch BRANCH]
+usage: build-runner.py [-h] --lang {c,cpp,python,java,rust,dotnet} --build-dir BUILD_DIR [--branch BRANCH]
 
 Build a runner and its dependencies
 

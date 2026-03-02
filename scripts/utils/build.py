@@ -233,6 +233,31 @@ def _build_rust(work_dir: Path, branch: Optional[str]) -> list[str]:
     return [str(runner_src/'target/release/s3-benchrunner-rust')]
 
 
+def _dotnet_rid() -> str:
+    """Return the .NET Runtime Identifier (RID) for the current platform."""
+    import platform as _platform
+    os_name = 'linux' if sys.platform == 'linux' else ('osx' if sys.platform == 'darwin' else 'win')
+    machine = _platform.machine()
+    arch = 'arm64' if machine == 'aarch64' or machine == 'arm64' else 'x64'
+    return f'{os_name}-{arch}'
+
+
+def _build_dotnet(work_dir: Path, branch: Optional[str]) -> list[str]:
+    """build s3-benchrunner-dotnet"""
+    runner_src = RUNNERS['dotnet'].dir
+    os.chdir(runner_src)
+
+    if branch:
+        print("WARNING: dotnet runner doesn't currently support --branch")
+
+    # Build runner
+    run(['dotnet', 'publish', '-c', 'Release'])
+
+    # return runner cmd
+    rid = _dotnet_rid()
+    return [str(runner_src / 'bin' / 'Release' / 'net9.0' / rid / 'publish' / 's3-benchrunner-dotnet')]
+
+
 def build_runner(lang: str, build_root_dir: Path, branch: Optional[str]) -> list[str]:
     """
     Build s3-benchrunner-<lang> and its dependencies.
@@ -253,6 +278,7 @@ def build_runner(lang: str, build_root_dir: Path, branch: Optional[str]) -> list
         'python': _build_python,
         'java': _build_java,
         'rust': _build_rust,
+        'dotnet': _build_dotnet,
     }
     build_fn = build_functions[lang]
 
