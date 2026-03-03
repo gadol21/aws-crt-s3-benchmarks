@@ -8,10 +8,17 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PublishAot>true</PublishAot>
+    <StackTraceSupport>true</StackTraceSupport>
+    <StripSymbols>false</StripSymbols>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.S3" Version="3.*" />
   </ItemGroup>
+
+  <ItemGroup>
+    <LinkerArg Include="-fno-omit-frame-pointer" />
+    <CompilerArg Include="-fno-omit-frame-pointer" /> 
+</ItemGroup>
 
 </Project>
